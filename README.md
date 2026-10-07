@@ -1,185 +1,110 @@
 # workout-motion
 
-**29 continuous SVG exercise animations**, built around one shared H2 character.
-Original geometric artwork for training logs, websites and apps, with no runtime dependencies.
+An SVG exercise animation library for training logs, fitness apps and websites.
 
-**English** · [简体中文](README.zh-CN.md)
+**[Live demo](https://jichunhou.me/workout-motion/)** · **English** · [简体中文](README.zh-CN.md)
 
-[Explore the gallery](https://jichunhou.me/workout-motion/) ·
-[Motion catalog](#motion-catalog) · [Commercial permission](COMMERCIAL-LICENSE.md)
+- **29 continuous animations** with a consistent visual style, with more to come.
+- **No runtime dependencies**, with a framework-independent JavaScript API.
+- **Playback and static output**: pause, seek, adjust speed, or render any frame as SVG.
 
-## Build and preview
+| Squat | Bench Press | Deadlift | Pull-up |
+| :---: | :---: | :---: | :---: |
+| [![Squat](site/previews/squat.gif)](https://jichunhou.me/workout-motion/?lang=en&motion=squat) | [![Bench Press](site/previews/bench-press.gif)](https://jichunhou.me/workout-motion/?lang=en&motion=bench-press) | [![Deadlift](site/previews/conventional-deadlift.gif)](https://jichunhou.me/workout-motion/?lang=en&motion=conventional-deadlift) | [![Pull-up](site/previews/pull-up.gif)](https://jichunhou.me/workout-motion/?lang=en&motion=pull-up) |
 
-Requires Node.js 20+ and pnpm 10.28.2. TypeScript 5.9.3 is the only development dependency.
-**This project has not been published to npm.** The examples below use files built from this repository.
+Full motion loops at 2× speed. Click a preview for interactive playback.
+
+## Getting started
+
+Build the SVG assets from source with Node.js 20+ and pnpm 10.28.2:
 
 ```sh
 git clone https://github.com/februarysea/workout-motion.git
 cd workout-motion
 pnpm install --frozen-lockfile
-pnpm check
 pnpm build
-pnpm build:site
-pnpm dev
 ```
 
-- Showcase: http://127.0.0.1:4325/.site/index.html
-- Set `PORT` to change the local port.
+The build generates:
 
-`pnpm build` creates `dist/` and 29 static SVGs in `assets/`.
-`pnpm build:site` also creates the standalone showcase in `.site/`.
-The development server does not watch or compile files; rebuild after source changes.
+- `assets/<id>.svg` — one SVG for each of the 29 motions, ready to use as an image.
+- `assets/manifest.json` — motion IDs, names, durations and SVG filenames.
+- `dist/` — JavaScript modules and TypeScript declarations for rendering and playback.
 
-## Add an animation to a webpage
+The exported SVGs are static frames at phase `0.2`. Continuous animation uses the
+JavaScript player.
 
-The **`/h2` entry**, built as `dist/h2.js`, provides all 29 H2 motions.
-The package root (`dist/index.js`) retains seven legacy drawings with overlapping
-IDs; they are not additional motions.
+## Render a specific frame
 
-After building, save this complete example as `example.html` in the repository root.
-Run `pnpm dev` and open http://127.0.0.1:4325/example.html .
-For another website, copy the **entire `dist/` directory**, along with `LICENSE`
-and `NOTICE`, next to the HTML file. Serve it over HTTP; do not open it with `file://`.
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>workout-motion example</title>
-    <style>
-      .motion {
-        width: 320px;
-        max-width: 100%;
-        aspect-ratio: 1;
-        background: #111;
-        --figure-paper: #111;
-        --figure-ink: #e9e9e9;
-        --figure-detail: #bdbdbd;
-        --figure-muted: #888;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="motion" class="motion"></div>
-    <button id="toggle" type="button" disabled>Play animation</button>
-    <p id="motion-note" hidden>Animation is paused by your reduced-motion preference.</p>
-
-    <script type="module">
-      import { createPlayer } from './dist/h2.js';
-
-      const button = document.querySelector('#toggle');
-      const note = document.querySelector('#motion-note');
-      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-
-      function updateControls(playing) {
-        button.disabled = reducedMotion.matches;
-        button.textContent = playing ? 'Pause animation' : 'Play animation';
-        note.hidden = !reducedMotion.matches;
-      }
-
-      const player = createPlayer(document.querySelector('#motion'), 'bench-press', {
-        autoplay: true,
-        speed: 1,
-        title: 'Bench press',
-        onStateChange: updateControls,
-      });
-
-      button.addEventListener('click', () => {
-        if (player.playing) player.pause();
-        else player.play();
-      });
-      reducedMotion.addEventListener('change', () => updateControls(player.playing));
-      updateControls(player.playing);
-
-      // Other controls: player.seek(0.35); player.setSpeed(0.75);
-      // Call player.destroy() before removing its host or unmounting a component.
-    </script>
-  </body>
-</html>
-```
-
-Replace `bench-press` with any ID in the [catalog](#motion-catalog).
-The player respects reduced motion, pauses while its document is hidden or its
-host is offscreen, and resumes when eligible if playback is still requested.
-Keep the visible pause control. When integrating into a framework, mount after the
-host exists and call `player.destroy()` during component cleanup.
-
-## Metadata and player controls
+After building, use `renderSvg` in Node.js to generate an SVG at any point in a
+motion. Save this example as `export-frame.mjs` in the repository root and run
+`node export-frame.mjs`:
 
 ```js
-import { exerciseIds, getExercise } from './dist/h2.js';
-
-console.log(exerciseIds.length); // 29
-const exercise = getExercise('bench-press');
-console.log(exercise.label, exercise.chinese, exercise.durationMs);
-// Also available: id, subtitle, and optional keyframes [{ phase, label }].
-```
-
-Metadata is frozen. `getExercise` returns `undefined` for an unknown ID.
-If you package and install this repository locally, its equivalent module specifier
-is `@februarysea/workout-motion/h2`; the browser example uses built files directly.
-
-| Player member | Behavior |
-| --- | --- |
-| `play()` / `pause()` | Request or pause playback; visibility and motion preferences still apply |
-| `seek(phase)` | Set a finite phase, clamped to 0–1; does not automatically pause |
-| `setSpeed(speed)` | Set a positive finite multiplier; default is `1` |
-| `playing` / `progress` | Read actual playback state / current phase |
-| `destroy()` | Remove the SVG and release the player's listeners, observer and animation loop |
-
-`createPlayer` options include `autoplay`, `speed`, `phase`, `title`, `decorative`,
-`respectReducedMotion` and `onStateChange`. Keep reduced-motion support enabled.
-`createPlayer` and `renderSvg` throw for unknown IDs or invalid numeric values.
-Complete types are generated in `dist/h2.d.ts`.
-
-## Use a static SVG
-
-The build exports a ready-to-use still for every H2 motion, plus `assets/manifest.json`,
-`assets/LICENSE` and `assets/NOTICE`. To display one without JavaScript:
-
-```html
-<img
-  src="./assets/bench-press.svg"
-  alt="Bench press illustration"
-  width="320"
-  height="320"
-  style="max-width:100%;height:auto;background:#151718"
-/>
-```
-
-These files use dark fallback colors, with `#151718` as the paper color.
-An external SVG loaded through `<img>` does not inherit the page's CSS variables.
-For a self-contained SVG in the current gallery theme and pose, use the
-[gallery's SVG download](https://jichunhou.me/workout-motion/).
-
-For a different phase, inline rendering, or Node/server-side rendering:
-
-```js
+import { writeFile } from 'node:fs/promises';
 import { renderSvg } from './dist/h2.js';
 
-const svg = renderSvg('bench-press', {
-  phase: 0.35,       // Position within one complete cycle: 0–1
-  size: 320,
-  title: 'Bench press illustration',
-});
-
-// Browser: add <div id="still" class="motion"></div> with the styles above.
-document.querySelector('#still').innerHTML = svg;
-// In Node/SSR, use the returned SVG string; renderSvg itself requires no DOM.
+const svg = renderSvg('squat', { phase: 0.5, size: 256, title: 'Squat' });
+await writeFile('squat.svg', svg, 'utf8');
 ```
 
-Each motion has an authored camera viewBox. Scale the whole SVG and preserve its
-aspect ratio. Inline SVGs inherit `--figure-paper`, `--figure-ink`,
-`--figure-detail` and `--figure-muted`; match paper to the host background so
-farther outlines stay hidden. The artwork does not provide background-independent
-transparent occlusion. Static renders at 80 px or below simplify detail;
-live players retain their full geometry and scale with the host.
+This creates `squat.svg`. `phase` selects a point in the motion from `0` to `1`;
+`size` sets the SVG dimensions in pixels.
 
-## Motion catalog
+## API
 
-Use these exact IDs with `getExercise`, `renderSvg` and `createPlayer`.
+The 29-motion library uses the **`/h2` entry**, built as `dist/h2.js`:
+
+| Export | Purpose |
+| --- | --- |
+| `exerciseIds` | Read-only list of the 29 motion IDs |
+| `getExercise(id)` | Frozen metadata: names, duration, subtitle and optional keyframes; `undefined` for an unknown ID |
+| `createPlayer(element, id, options?)` | Mount an SVG animation and return its controls |
+| `renderSvg(id, options?)` | Return a static SVG string; works in Node and SSR without a DOM |
+
+For animation in an application, pass a mounted HTML element as `host`:
+
+```js
+import { createPlayer } from './dist/h2.js';
+
+const player = createPlayer(host, 'bench-press', { autoplay: false });
+```
+
+Players expose `play()`, `pause()`, `seek(phase)`, `setSpeed(speed)`, `destroy()`,
+and read-only `playing` / `progress`. Speed is a positive multiplier. Options
+include `autoplay`, `phase`, `speed`, `title` and `onStateChange`.
+Connect playback controls to these methods and keep a visible pause control.
+Playback respects reduced motion and pauses when the page is hidden or the
+player is offscreen. Call `destroy()` when removing the host.
+
+## SVG appearance
+
+Inline SVGs and players inherit four CSS variables. For example, apply a light
+theme to a host with the `workout-motion` class:
+
+```css
+.workout-motion {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  background: var(--figure-paper);
+  --figure-paper: #f4f1e9;
+  --figure-ink: #252720;
+  --figure-detail: #55594d;
+  --figure-muted: #83877a;
+}
+```
+
+Match the host background to `--figure-paper`, which masks hidden outlines, and
+preserve the SVG's aspect ratio. For external SVGs in `<img>`, set
+`background: #151718` to match the default paper color; they do not inherit page CSS variables.
+
+## Exercises
+
+Pass any of these IDs to `createPlayer`, `renderSvg` or `getExercise`.
+
+<details>
+<summary>All 29 motion IDs</summary>
 
 | ID | Motion |
 | --- | --- |
@@ -213,13 +138,7 @@ Use these exact IDs with `getExercise`, `renderSvg` and `createPlayer`.
 | `depth-box-jump` | Drop-to-Box Jump |
 | `lateral-box-jump` | Lateral Box Jump |
 
-## Origins
-
-The code and original geometric artwork were created with AI assistance;
-the original character concept images are not embedded in generated SVGs.
-The project grew out of an experiment with [Workout Guide](https://github.com/bryllim/workout-guide),
-whose artwork is not included or relicensed here.
-These are interface illustrations, not professionally validated exercise guidance.
+</details>
 
 ## License
 
