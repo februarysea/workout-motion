@@ -1,0 +1,48 @@
+{
+  "name": "@februarysea/workout-motion",
+  "version": "0.1.0",
+  "description": "Original continuous SVG exercise animations. Framework independent, with no runtime dependencies.",
+  "type": "module",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/februarysea/workout-motion.git"
+  },
+  "homepage": "https://jichunhou.me/workout-motion/",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./h2": {
+      "types": "./dist/h2.d.ts",
+      "import": "./dist/h2.js"
+    },
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "LICENSE",
+    "NOTICE",
+    "COMMERCIAL-LICENSE.md",
+    "README.zh-CN.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/export.mjs",
+    "check": "tsc --noEmit",
+    "dev": "node scripts/serve.mjs",
+    "build:site": "pnpm build && node scripts/build-site.mjs",
+    "prepare": "pnpm build",
+    "prepack": "pnpm build"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@10.28.2"
+}

@@ -1,0 +1,21 @@
+name: Commercial permission / 商业授权
+description: Request written permission for a commercial use of workout-motion.
+title: "[License] "
+body:
+  - type: markdown
+    attributes:
+      value: "Describe your intended use. This is a public issue; omit confidential information. Submitting this request does not grant permission."
+  - type: textarea
+    id: use
+    attributes:
+      label: Intended use / 使用场景
+      description: Product or service, target audience, and how the motions will be distributed.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Requested scope / 申请范围
+      description: Motion IDs, websites or apps, modifications, and expected distribution.
+    validations:
+      required: true

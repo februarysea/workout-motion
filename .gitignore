@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+dist/
+assets/
+.DS_Store
+*.tgz
+coverage/
+review/*.png
+review/exports/
+.site/
+.release/
