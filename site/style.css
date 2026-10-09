@@ -82,8 +82,11 @@
   .playback-controls { display: flex; align-items: center; gap: 15px; padding-top: 17px; }
   .timeline-wrap { flex: 1; min-width: 0; padding-top: 8px; }
   .timeline-labels { display: flex; justify-content: space-between; }
-  .preview-actions { display: flex; gap: 12px; justify-content: space-between; align-items: center; margin-top: 21px; }
+  .preview-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-top: 21px; }
   .export-actions, .motion-navigation { display: flex; gap: 8px; }
+  .export-actions { flex-wrap: wrap; }
+  .motion-navigation { margin-left: auto; }
+  .pose-download { display: flex; align-items: stretch; gap: 6px; }
   .catalog-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
   .category-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 17px 0 19px; }
   .catalog-results { position: relative; flex: 1; min-height: 400px; }
@@ -149,6 +152,11 @@
   .button-secondary { border-color: var(--line); background: transparent; }
   .button-secondary:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
   .export-note { margin-top: 10px; color: var(--faint); font-size: 9px; }
+  .pose-download select { min-height: 43px; padding: 0 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); font-size: 11px; }
+  .animation-export { display: flex; flex-wrap: wrap; align-items: center; column-gap: 13px; margin-top: 12px; }
+  .animation-note { color: var(--faint); font-size: 9px; }
+  .developer-link { display: inline-flex; margin-top: 13px; font-size: 10px; color: var(--muted); }
+  .developer-link:hover { color: var(--accent); }
   .reduced-motion-note { color: var(--accent); font-size: 10px; padding-top: 12px; }
   .catalog-heading h2 { font-size: 16px; font-weight: 550; letter-spacing: -.3px; }
   .catalog-heading h2 > span { display: block; font: 9px/1.5 var(--mono); color: var(--faint); letter-spacing: 1.2px; margin-top: 4px; }

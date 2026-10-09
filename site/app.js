@@ -36,6 +36,9 @@ let notificationTimer = null;
 let activeKeyframe = null;
 let copyLabel = 'SVG';
 let loadFailed = false;
+const downloadUrls = new Set();
+let animationDownloads = new Map();
+let animationLoadState = "loading";
 
 function applyLanguage(next, persist = true) {
   language = next === 'zh' ? 'zh' : 'en';
@@ -50,6 +53,9 @@ function applyLanguage(next, persist = true) {
   toggle.lang = language === 'zh' ? 'en' : 'zh-CN';
   toggle.setAttribute('aria-label', language === 'zh' ? 'Switch to English' : '切换为中文');
   document.querySelectorAll('[data-license-link]').forEach((link) => { link.href = `./license.html?lang=${language}`; });
+  document.querySelectorAll('[data-developer-link]').forEach((link) => {
+    link.href = `${SOURCE_URL}/blob/main/${language === 'zh' ? 'README.zh-CN.md' : 'README.md'}`;
+  });
   try {
     const url = new URL(location.href);
     url.searchParams.set('lang', language);
@@ -70,6 +76,7 @@ function applyLanguage(next, persist = true) {
     paintProgress();
   }
   if (loadFailed) renderLoadFailure();
+  updateAnimationDownload();
 }
 
 function renderLoadFailure() {
@@ -198,6 +205,7 @@ function renderSelectedCopy() {
   const title = preview.querySelector("svg title");
   if (title) title.textContent = motionName(motion);
   preview.querySelector("svg")?.setAttribute("aria-label", motionName(motion));
+  updateAnimationDownload();
 }
 
 function selectMotion(id, { scrollPreview = false } = {}) {
@@ -311,6 +319,162 @@ function exportSvg() {
   return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svg)}\n`;
 }
 
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  downloadUrls.add(url);
+  try {
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    downloadUrls.delete(url);
+    throw error;
+  } finally {
+    link.remove();
+  }
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    downloadUrls.delete(url);
+  }, 30000);
+}
+
+function pngNoticeChunk(notice) {
+  // PNG tEXt uses Latin-1. Our export metadata contains ASCII URLs and IDs.
+  const content = new TextEncoder().encode(`Description\0${notice}`);
+  const chunk = new Uint8Array(content.length + 12);
+  const view = new DataView(chunk.buffer);
+  view.setUint32(0, content.length);
+  chunk.set([116, 69, 88, 116], 4); // tEXt
+  chunk.set(content, 8);
+  let crc = 0xffffffff;
+  for (const byte of chunk.subarray(4, -4)) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  view.setUint32(chunk.length - 4, (crc ^ 0xffffffff) >>> 0);
+  return chunk;
+}
+
+async function addPngNotice(blob, notice) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (!signature.every((byte, index) => bytes[index] === byte)) throw new Error("Invalid PNG");
+  const view = new DataView(bytes.buffer);
+  let offset = 8;
+  while (offset + 12 <= bytes.length) {
+    const length = view.getUint32(offset);
+    if (offset + length + 12 > bytes.length) break;
+    if (view.getUint32(offset + 4) === 0x49454e44 && length === 0) {
+      return new Blob([bytes.subarray(0, offset), pngNoticeChunk(notice), bytes.subarray(offset)], { type: "image/png" });
+    }
+    offset += length + 12;
+  }
+  throw new Error("Incomplete PNG");
+}
+
+async function svgToPng(svg) {
+  const source = new DOMParser().parseFromString(svg, "image/svg+xml");
+  const notice = source.querySelector("metadata")?.textContent;
+  if (source.querySelector("parsererror") || !notice) throw new Error("Invalid export SVG");
+  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  const image = new Image();
+  let timer;
+  try {
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Unable to render SVG"));
+      timer = setTimeout(() => reject(new Error("SVG rendering timed out")), 15000);
+      image.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 720;
+    canvas.height = 720;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas unavailable");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error("PNG encoding failed"));
+    }, "image/png"));
+    return await addPngNotice(blob, notice);
+  } finally {
+    clearTimeout(timer);
+    image.onload = null;
+    image.onerror = null;
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function downloadPose() {
+  if (!player) return;
+  const button = $("#download-pose");
+  const format = $("#pose-format").value === "png" ? "png" : "svg";
+  // Capture both SVG and filename before rasterization; playback can continue.
+  const filename = `workout-motion-${selectedId}-${root.dataset.theme}.${format}`;
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  try {
+    const svg = exportSvg();
+    const blob = format === "png" ? await svgToPng(svg) : new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    downloadBlob(blob, filename);
+    notify(t("downloadReady", { format: format.toUpperCase() }));
+  } catch { notify(t("exportError")); }
+  finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+}
+
+function updateAnimationDownload() {
+  const available = Boolean(selectedId && animationDownloads.has(selectedId));
+  $("#download-animation").disabled = !available;
+  $("#animation-note").textContent = t(available ? "animationNote" : animationLoadState === "loading" ? "animationLoading" : "animationUnavailable");
+}
+
+async function loadAnimationDownloads() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch("./downloads.json", { signal: controller.signal });
+    if (!response.ok) throw new Error("Downloads unavailable");
+    const manifest = await response.json();
+    if (!manifest.animations || typeof manifest.animations !== "object" || Array.isArray(manifest.animations)) throw new Error("Invalid downloads manifest");
+    const entries = Object.entries(manifest.animations).flatMap(([id, value]) => {
+      if (typeof value !== "string") return [];
+      try {
+        const url = new URL(value, location.href);
+        return url.protocol === "https:" || (url.protocol === "http:" && url.origin === location.origin) ? [[id, url.href]] : [];
+      } catch { return []; }
+    });
+    animationDownloads = new Map(entries);
+    animationLoadState = "ready";
+  } catch {
+    animationLoadState = "unavailable";
+  }
+  finally {
+    clearTimeout(timer);
+    updateAnimationDownload();
+  }
+}
+
+function downloadAnimation() {
+  const url = animationDownloads.get(selectedId);
+  if (!url) return;
+  // Release assets are cross-origin. Follow their attachment headers without
+  // fetching the binary through CORS or holding the whole animation in memory.
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `workout-motion-${selectedId}-1x.gif`;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.append(link);
+  try { link.click(); }
+  finally { link.remove(); }
+}
+
 search.addEventListener("input", renderList);
 $("#reset-search").addEventListener("click", () => {
   search.value = "";
@@ -339,19 +503,9 @@ progress.addEventListener("input", () => {
 $("#motion-speed").addEventListener("change", (event) => player?.setSpeed(Number(event.target.value)));
 $("#previous-motion").addEventListener("click", () => navigateMotion(-1));
 $("#next-motion").addEventListener("click", () => navigateMotion(1));
-$("#download-svg").addEventListener("click", () => {
-  try {
-    const url = URL.createObjectURL(new Blob([exportSvg()], { type: "image/svg+xml;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `workout-motion-${selectedId}-${root.dataset.theme}.svg`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-    notify(t("downloadReady"));
-  } catch { notify(t("exportError")); }
-});
+$("#download-pose").addEventListener("click", downloadPose);
+$("#download-animation").addEventListener("click", downloadAnimation);
+void loadAnimationDownloads();
 $("#copy-svg").addEventListener("click", () => {
   try { void copyText(exportSvg(), "SVG"); } catch { notify(t("exportError")); }
 });
@@ -375,6 +529,8 @@ reducedMotion.addEventListener("change", () => {
 window.addEventListener("pagehide", () => {
   player?.destroy();
   if (timelineFrame !== null) cancelAnimationFrame(timelineFrame);
+  for (const url of downloadUrls) URL.revokeObjectURL(url);
+  downloadUrls.clear();
 });
 window.addEventListener("pageshow", (event) => { if (event.persisted && api && selectedId) selectMotion(selectedId); });
 
@@ -388,7 +544,7 @@ try {
   const initialId = api.exerciseIds.includes(requestedId) ? requestedId : api.exerciseIds.includes("conventional-deadlift") ? "conventional-deadlift" : api.exerciseIds[0];
   selectMotion(initialId);
   renderList();
-  for (const selector of ["#motion-search", "#motion-progress", "#motion-speed", "#download-svg", "#copy-svg"]) $(selector).disabled = false;
+  for (const selector of ["#motion-search", "#motion-progress", "#motion-speed", "#download-pose", "#pose-format", "#copy-svg"]) $(selector).disabled = false;
   document.querySelectorAll("[data-category]").forEach((button) => { button.disabled = false; });
 } catch (error) {
   console.error("workout-motion could not initialize", error);

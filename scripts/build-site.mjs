@@ -13,6 +13,22 @@ for (const name of ['dist', 'assets', 'LICENSE', 'NOTICE', 'COMMERCIAL-LICENSE.m
   await cp(new URL(name, root), new URL(name, output), { recursive: true });
 }
 await writeFile(new URL('.nojekyll', output), '');
+// A release's downloads always follow its package version and built motion catalog.
+const { version } = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
+const catalog = JSON.parse(await readFile(new URL('assets/manifest.json', root), 'utf8'));
+const releaseUrl = `https://github.com/februarysea/workout-motion/releases/download/v${version}`;
+await writeFile(new URL('downloads.json', output), JSON.stringify({
+  version,
+  library: `${releaseUrl}/workout-motion-${version}.zip`,
+  svgs: `${releaseUrl}/workout-motion-svg-${version}.zip`,
+  animations: Object.fromEntries(catalog.map(({ id }) => [id, `${releaseUrl}/${id}.gif`])),
+}, null, 2) + '\n');
+// The source templates remain readable; generated copy follows the accepted catalog.
+for (const name of ['index.html', 'i18n.js']) {
+  const path = new URL(name, output);
+  const text = await readFile(path, 'utf8');
+  await writeFile(path, text.replaceAll('__MOTION_COUNT__', String(catalog.length)));
+}
 const escape = (value) => value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const license = await readFile(new URL('LICENSE', root), 'utf8');
 const notice = await readFile(new URL('NOTICE', root), 'utf8');

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#111111" />
-    <meta name="description" content="29 continuous SVG exercise illustrations. Search, play and export. Free for permitted noncommercial use; commercial permission required." />
+    <meta name="description" content="__MOTION_COUNT__ continuous SVG exercise illustrations. Search, play and export. Free for permitted noncommercial use; commercial permission required." />
     <title>workout-motion · Motion library</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,15 +25,15 @@
 
       <main>
         <section class="intro" aria-labelledby="page-title">
-          <div class="intro-card"><p class="eyebrow"><span class="accent-dot" aria-hidden="true"></span><span data-i18n="eyebrow">A small project about movement</span></p><h1 id="page-title"><span data-i18n="heading">Put motion in motion.</span></h1><p class="intro-copy"><span data-i18n="intro">29 continuous SVG exercises for training logs and movement interfaces.</span></p></div>
-          <div class="intro-facts" data-i18n-aria="facts" aria-label="Library information"><div class="catalog-total"><strong>29</strong><span data-i18n="motionCount">motions</span></div><p data-i18n="factsNote">More motions on the way</p><p class="facts-feature" data-i18n="features">ORIGINAL SVG / ZERO RUNTIME DEPENDENCIES</p></div>
+          <div class="intro-card"><p class="eyebrow"><span class="accent-dot" aria-hidden="true"></span><span data-i18n="eyebrow">A small project about movement</span></p><h1 id="page-title"><span data-i18n="heading">Put motion in motion.</span></h1><p class="intro-copy"><span data-i18n="intro">__MOTION_COUNT__ continuous SVG exercises for training logs and movement interfaces.</span></p></div>
+          <div class="intro-facts" data-i18n-aria="facts" aria-label="Library information"><div class="catalog-total"><strong>__MOTION_COUNT__</strong><span data-i18n="motionCount">motions</span></div><p data-i18n="factsNote">More motions on the way</p><p class="facts-feature" data-i18n="features">ORIGINAL SVG / ZERO RUNTIME DEPENDENCIES</p></div>
         </section>
 
         <section class="studio" id="motion-library" data-i18n-aria="studio" aria-label="Interactive motion library" aria-busy="true">
           <div class="preview-panel">
             <div class="preview-heading"><div><p class="section-kicker"><span data-i18n="preview">Motion preview</span></p><h2 id="motion-name"><span data-i18n="loading">Loading motion…</span></h2><p id="motion-english" class="motion-english">Workout motion library</p></div><span id="motion-category" class="category-badge">SVG</span></div>
             <div class="stage" id="preview-stage">
-              <div class="stage-topline"><span id="motion-number">01 / 29</span><span id="playback-indicator"><i aria-hidden="true"></i><span><span data-i18n="ready">Getting ready</span></span></span></div>
+              <div class="stage-topline"><span id="motion-number">01 / __MOTION_COUNT__</span><span id="playback-indicator"><i aria-hidden="true"></i><span><span data-i18n="ready">Getting ready</span></span></span></div>
               <div id="motion-art" class="motion-art" data-i18n-aria="selectedPreview" aria-label="Selected motion preview"></div>
               <div class="stage-bottomline"><span><span data-i18n="linework">Original linework</span></span><span id="motion-duration">— SEC / LOOP</span></div>
               <p id="load-error" class="load-error" role="alert" hidden><span data-i18n="loadError">This motion could not load. Please try again.</span><button class="text-button" id="retry-load" type="button"><span data-i18n="retry">Reload</span></button></p>
@@ -46,16 +46,24 @@
             <p id="reduced-motion-note" class="reduced-motion-note" hidden><span data-i18n="reduced">Your reduced-motion preference is on. Use the timeline or key poses to explore each motion.</span></p>
             <div id="keyframes" class="keyframes" data-i18n-aria="keyframes" aria-label="Key poses"></div>
             <p id="motion-subtitle" class="motion-subtitle"><span data-i18n="loading">Loading motion…</span></p>
-            <div class="preview-actions"><div class="export-actions"><button id="download-svg" class="button button-primary" type="button" disabled><span><span data-i18n="download">Download SVG</span></span><svg viewBox="0 0 20 20" width="17" height="17" fill="none" aria-hidden="true"><path d="M10 3v9m-3-3 3 3 3-3M4 13v4h12v-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="copy-svg" class="button button-secondary" type="button" disabled><span data-i18n="copySvg">Copy SVG</span></button></div><div class="motion-navigation" data-i18n-aria="navigation" aria-label="Change motion"><button class="icon-button" id="previous-motion" type="button" data-i18n-aria="previous" aria-label="Previous motion" disabled>←</button><button class="icon-button" id="next-motion" type="button" data-i18n-aria="next" aria-label="Next motion" disabled>→</button></div></div>
-            <p class="export-note"><span data-i18n="exportNote">Export this pose and theme, with its license notice.</span></p>
+            <div class="preview-actions">
+              <div class="export-actions">
+                <div class="pose-download"><button id="download-pose" class="button button-primary" type="button" disabled><span data-i18n="download">Download current pose</span></button><label class="sr-only" for="pose-format" data-i18n="poseFormat">Pose format</label><select id="pose-format" disabled><option value="svg">SVG</option><option value="png">PNG</option></select></div>
+                <button id="copy-svg" class="button button-secondary" type="button" disabled><span data-i18n="copySvg">Copy SVG</span></button>
+              </div>
+              <div class="motion-navigation" data-i18n-aria="navigation" aria-label="Change motion"><button class="icon-button" id="previous-motion" type="button" data-i18n-aria="previous" aria-label="Previous motion" disabled>←</button><button class="icon-button" id="next-motion" type="button" data-i18n-aria="next" aria-label="Next motion" disabled>→</button></div>
+            </div>
+            <p class="export-note"><span data-i18n="exportNote">A still image of this pose and theme, including its license notice.</span></p>
+            <div class="animation-export"><button id="download-animation" class="text-button" type="button" disabled><span data-i18n="downloadAnimation">Download full animation · GIF</span> <span aria-hidden="true">↓</span></button><span id="animation-note" class="animation-note" aria-live="polite" data-i18n="animationLoading">Checking animation downloads…</span></div>
+            <a class="developer-link text-link" data-developer-link href="https://github.com/februarysea/workout-motion/blob/main/README.md" target="_blank" rel="noopener noreferrer"><span data-i18n="developerGuide">Embed in your app</span> <span aria-hidden="true">↗</span></a>
           </div>
 
           <aside class="catalog-panel" aria-labelledby="catalog-heading">
-            <div class="catalog-heading"><h2 id="catalog-heading"><span data-i18n="collection">Find your motion</span><span><span data-i18n="collectionKicker">The collection</span></span></h2><span id="result-count" class="result-count" aria-live="polite">29</span></div>
+            <div class="catalog-heading"><h2 id="catalog-heading"><span data-i18n="collection">Find your motion</span><span><span data-i18n="collectionKicker">The collection</span></span></h2><span id="result-count" class="result-count" aria-live="polite">__MOTION_COUNT__</span></div>
             <div class="search-wrap"><svg viewBox="0 0 20 20" width="19" height="19" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="m12.5 12.5 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><label class="sr-only" for="motion-search"><span data-i18n="search">Search by Chinese or English name, or motion ID</span></label><input id="motion-search" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Search motions, e.g. bench" autocomplete="off" spellcheck="false" disabled /><kbd aria-hidden="true">/</kbd></div>
             <div class="category-filters" role="group" data-i18n-aria="categories" aria-label="Filter by equipment"><button type="button" data-category="all" aria-pressed="true" disabled><span data-i18n="all">All</span></button><button type="button" data-category="barbell" aria-pressed="false" disabled><span data-i18n="barbell">Barbell</span></button><button type="button" data-category="dumbbell" aria-pressed="false" disabled><span data-i18n="dumbbell">Dumbbell</span></button><button type="button" data-category="cable" aria-pressed="false" disabled><span data-i18n="cable">Cable</span></button><button type="button" data-category="bodyweight" aria-pressed="false" disabled><span data-i18n="bodyweight">Bodyweight &amp; jumps</span></button></div>
             <div class="catalog-results"><ul class="motion-list" id="motion-list" data-i18n-aria="list" aria-label="Motion list"></ul><div id="empty-state" class="empty-state" hidden><span aria-hidden="true">∅</span><h3><span data-i18n="emptyTitle">No motion found</span></h3><p><span data-i18n="emptyText">Try another name or choose a different category.</span></p><button type="button" id="reset-search" class="text-button"><span data-i18n="reset">Show all motions</span></button></div><p id="catalog-loading" class="catalog-loading"><span data-i18n="catalogLoading">Opening the collection…</span></p></div>
-            <div class="catalog-footnote"><span class="accent-dot" aria-hidden="true"></span><p><span data-i18n="collectionNote">29 individual movements. Pick one and bring the lines to life.</span></p></div>
+            <div class="catalog-footnote"><span class="accent-dot" aria-hidden="true"></span><p><span data-i18n="collectionNote">__MOTION_COUNT__ individual movements. Pick one and bring the lines to life.</span></p></div>
           </aside>
         </section>
         <noscript><p class="noscript-note">Enable JavaScript to explore motions. <a href="https://github.com/februarysea/workout-motion">View the source</a>。</p></noscript>
